@@ -573,57 +573,17 @@
         <p>&copy; 2025 SuniCraft. All rights reserved. TITLEGAN AI is a product of SuniCraft.</p>
     </footer>
     <script>
-        // *** AI BACKEND URL ***
+        // *** AI BACKEND URL (MUST BE CORRECT RENDER URL) ***
         const BACKEND_URL = "https://titlegan-ai-server.onrender.com/api/generate-titles"; 
        
-        // --- 1. DUMMY DATA (Only used for Description Snippet & SEO/Tags) ---
-        const powerWords = [
-            "ULTIMATE GUIDE", "SHOCKING", "SECRET", "PRO TIPS",
-            "BEST", "WORST", "INSANE", "UNBELIEVABLE", "MUST-SEE",
-            "HACKS", "EXPOSED", "REVEALED", "FINALLY",
-            "DISCOVER", "AMAZING", "SURPRISING", "CRITICAL", "ESSENTIAL"
-        ];
-        
-        // --- 2. SEO (DUMMY) DATA ---
-        // Generates dummy keywords and scores based on the input topic
-        function generateDummySEOData(topic) {
-            const topicWords = topic.toLowerCase().split(' ').filter(w => w.length > 3);
-            
-            const keywords = [
-                topic,
-                ...topicWords.map(w => `best ${w}`),
-                ...topicWords.map(w => `${w} tutorial`),
-                ...topicWords.map(w => `how to ${w} 2025`),
-                "youtube seo tips", "viral video strategy"
-            ].slice(0, 5); // Limit to 5 keywords
-
-            const tags = [
-                topic.replace(/\s/g, ''),
-                ...topicWords,
-                "sunilcraft", "titleganai", "yt_seo", "youtube_hacks",
-                ...keywords.map(k => k.replace(/\s/g, '_')).slice(0, 5)
-            ].filter((v, i, a) => a.indexOf(v) === i).slice(0, 10); // Remove duplicates, limit to 10
-
-            const keywordData = keywords.map(kw => ({
-                keyword: toTitleCase(kw),
-                score: Math.floor(Math.random() * 90) + 10 // Score 10-99
-            }));
-
-            return { keywordData, tags };
-        }
-        
-        // --- 3. HELPER FUNCTIONS ---
-        function getRandomItem(arr) {
-            return arr[Math.floor(Math.random() * arr.length)];
-        }
-
+        // --- 1. HELPER FUNCTIONS ---
         function toTitleCase(str) {
             return str.replace(/\w\S*/g, txt =>
                 txt.charAt(0).toUpperCase() + txt.substr(1)
             );
         }
 
-        // --- 4. CORE FUNCTION: RUN ANALYSIS (REAL AI FETCH LOGIC) ---
+        // --- 2. CORE FUNCTION: RUN ANALYSIS (REAL AI FETCH LOGIC) ---
         async function runAnalysis() {
             const input = document.getElementById("inputTitle").value.trim();
             const resultsContainer = document.getElementById("titles-results");
@@ -635,7 +595,7 @@
 
             // 1. UI को अपडेट करें: लोडिंग दिखाएँ
             resultsContainer.innerHTML = `<div style="text-align: center; color: #66FCF1; padding: 20px;">
-                <i class="fas fa-spinner fa-spin"></i> Analyzing topic & generating AI titles...
+                <i class="fas fa-spinner fa-spin"></i> Analyzing topic & generating REAL AI titles & SEO data...
             </div>`;
             document.getElementById('research-section').scrollIntoView({ behavior: 'smooth' });
 
@@ -654,27 +614,26 @@
                 }
 
                 const data = await response.json();
-
+                
                 // 2. Titles डिस्प्ले करें
                 displayAITitles(data.titles);
                 
-                // 3. Dummy SEO और Tags डिस्प्ले करें 
-                const { keywordData, tags } = generateDummySEOData(input);
-                displayKeywords(keywordData);
-                displayTags(tags);
+                // 3. REAL Keywords और Tags डिस्प्ले करें
+                displayKeywords(data.keywords); // AI से मिले Keywords का उपयोग
+                displayTags(data.tags);       // AI से मिले Tags का उपयोग
                 
                 // 4. Preview अपडेट करें
-                updatePreview('Choose a generated AI title from the list above.');
+                updatePreview('Choose a generated AI title from the list above.', data.description_snippet); // AI Description Snippet भेजें
 
             } catch (error) {
                 console.error("AI Generation Error:", error);
                 resultsContainer.innerHTML = `<div style="text-align: center; color: orange; padding: 20px;">
-                    <i class="fas fa-exclamation-triangle"></i> Error generating titles. Server might be sleeping or unavailable. Please try again in 1 minute.
+                    <i class="fas fa-exclamation-triangle"></i> Error generating data. Server might be sleeping or unavailable. Please check your Node.js logs.
                 </div>`;
             }
         }
         
-        // --- 5. DISPLAY FUNCTIONS ---
+        // --- 3. DISPLAY FUNCTIONS ---
         
         function displayAITitles(titles) {
             const resultsContainer = document.getElementById("titles-results");
@@ -689,7 +648,7 @@
                 div.appendChild(titleSpan);
                 
                 // Add event listener to update preview when a title is clicked/selected
-                titleSpan.onclick = () => updatePreview(title);
+                titleSpan.onclick = () => updatePreview(title, document.getElementById('preview-description').textContent); 
                 titleSpan.style.cursor = 'pointer';
 
                 const copyButton = document.createElement("button");
@@ -712,21 +671,23 @@
         
         function displayKeywords(keywordData) {
             const container = document.getElementById("keyword-results");
-            container.innerHTML = "<h3>Keyword Score Legend: <span style='color: limegreen;'>Good (70+)</span>, <span style='color: yellow;'>Fair (40-69)</span>, <span style='color: orange;'>Low (10-39)</span></h3>";
+            // अब AI से मिला स्कोर उपयोग होगा
+            container.innerHTML = "<h3>Top Keywords & Competition Score (AI Generated)</h3>"; 
             
             keywordData.forEach(item => {
                 const itemDiv = document.createElement("div");
                 itemDiv.className = "keyword-item";
                 
-                const scoreColor = item.score >= 70 ? 'limegreen' : item.score >= 40 ? 'yellow' : 'orange';
-                const scoreFillColor = item.score >= 70 ? '#3CB371' : item.score >= 40 ? '#FFD700' : '#FF8C00';
+                const score = item.score; // AI से प्राप्त रियल स्कोर
+                const scoreColor = score >= 70 ? 'limegreen' : score >= 40 ? 'yellow' : 'orange';
+                const scoreFillColor = score >= 70 ? '#3CB371' : score >= 40 ? '#FFD700' : '#FF8C00';
 
                 itemDiv.innerHTML = `
                     <div class="keyword-text">${item.keyword}</div>
                     <div class="score-bar">
-                        <div class="score-fill" style="width: ${item.score}%; background-color: ${scoreFillColor};"></div>
+                        <div class="score-fill" style="width: ${score}%; background-color: ${scoreFillColor};"></div>
                     </div>
-                    <div class="keyword-score" style="color: ${scoreColor};">${item.score}/100</div>
+                    <div class="keyword-score" style="color: ${scoreColor};">${score}/100</div>
                 `;
                 container.appendChild(itemDiv);
             });
@@ -734,7 +695,7 @@
         
         function displayTags(tags) {
             const container = document.getElementById("tag-results");
-            container.innerHTML = "";
+            container.innerHTML = "<h3>Suggested Tags (AI Generated)</h3>"; // हेडिंग अपडेट करें
             
             tags.forEach(tag => {
                 const span = document.createElement("span");
@@ -759,12 +720,13 @@
             container.appendChild(copyAllButton);
         }
         
-        function updatePreview(title) {
+        function updatePreview(title, descriptionSnippet) {
             const truncatedTitle = title.length > 60 ? title.substring(0, 57) + '...' : title;
             
             // Title & Description Preview
             document.getElementById('preview-title').textContent = title;
-            document.getElementById('preview-description').textContent = generateDummyDescription(title);
+            // REAL AI Description Snippet का उपयोग करें
+            document.getElementById('preview-description').textContent = descriptionSnippet; 
             
             // Thumbnail Overlays
             document.getElementById('desktop-title-overlay').textContent = truncatedTitle;
@@ -773,14 +735,9 @@
             // Scroll to Preview Section
             document.getElementById('preview-section').scrollIntoView({ behavior: 'smooth' });
         }
-        
-        function generateDummyDescription(title) {
-            // यह अभी भी डमी है, लेकिन इसमें AI टाइटल का पहला शब्द शामिल है।
-            return `In this video, we reveal the ${title.toLowerCase().split(' ')[0]} way to ${document.getElementById("inputTitle").value.trim()}. This ultimate guide covers everything you need to know in 2025! Don't forget to like, subscribe, and hit the bell icon! #${getRandomItem(powerWords).toLowerCase()} #${document.getElementById("inputTitle").value.trim().replace(/\s/g, '')}`;
-        }
 
 
-        // --- 6. TOGGLE VIEW ---
+        // --- 4. TOGGLE VIEW ---
         document.querySelector('.toggle-button').addEventListener('click', function() {
             document.body.classList.toggle('light-mode');
             
