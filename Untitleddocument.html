@@ -573,36 +573,15 @@
         <p>&copy; 2025 SuniCraft. All rights reserved. TITLEGAN AI is a product of SuniCraft.</p>
     </footer>
     <script>
-        // *** यह वह जगह है जहाँ आपको लाइन जोड़नी है! ***
+        // *** AI BACKEND URL ***
         const BACKEND_URL = "https://titlegan-ai-server.onrender.com/api/generate-titles"; 
        
-        // --- 1. TITLE GENERATION DATA ---
+        // --- 1. DUMMY DATA (Only used for Description Snippet & SEO/Tags) ---
         const powerWords = [
             "ULTIMATE GUIDE", "SHOCKING", "SECRET", "PRO TIPS",
             "BEST", "WORST", "INSANE", "UNBELIEVABLE", "MUST-SEE",
             "HACKS", "EXPOSED", "REVEALED", "FINALLY",
             "DISCOVER", "AMAZING", "SURPRISING", "CRITICAL", "ESSENTIAL"
-        ];
-
-        const templates = [
-            "{power1} {number} {topic} {power2} {phrase}",
-            "{number} {power1} Ways to {topic}",
-            "{topic}: {power1} {phrase} ({year})",
-            "{power1} {topic} {power2} - {phrase}",
-            "How to {topic} - {power1} Guide",
-            "{number} {power1} {topic} Tricks {phrase}",
-            "Why {topic} is {power1} {phrase}",
-            "{topic} {power1} Secrets {phrase}",
-            "The Truth About {topic} {power1}",
-            "{power1} {topic} Tutorial ({year}) {phrase}"
-        ];
-
-        const phrases = [
-            "You Won't Believe!", "Every Beginner Should Know",
-            "They Don't Want You to Know", "Click to Find Out",
-            "Here's Why", "Before It's Too Late", "Expert Advice",
-            "That Will Blow Your Mind", "The Complete Breakdown",
-            "What Nobody Tells You"
         ];
         
         // --- 2. SEO (DUMMY) DATA ---
@@ -644,57 +623,63 @@
             );
         }
 
-        // Generates a single title based on the topic
-        function generateTitle(topic) {
-            const template = getRandomItem(templates);
-            const year = Math.random() > 0.5 ? "2024" : "2025";
-            const number = Math.floor(Math.random() * 20) + 1;
-            
-            let title = template
-                .replace(/{topic}/g, toTitleCase(topic))
-                .replace(/{power1}/g, getRandomItem(powerWords)) 
-                .replace(/{power2}/g, getRandomItem(powerWords)) 
-                .replace(/{phrase}/g, getRandomItem(phrases))
-                .replace(/{year}/g, year)
-                .replace(/{number}/g, number);
-            
-            return title;
-        }
-        
-        // --- 4. CORE FUNCTION: RUN ANALYSIS ---
-        function runAnalysis() {
+        // --- 4. CORE FUNCTION: RUN ANALYSIS (REAL AI FETCH LOGIC) ---
+        async function runAnalysis() {
             const input = document.getElementById("inputTitle").value.trim();
+            const resultsContainer = document.getElementById("titles-results");
+
             if (!input) {
                 alert("Please enter a topic first!");
                 return;
             }
-            
-            // 1. Generate Titles
-            generateTitles(input);
-            
-            // 2. Generate SEO Data
-            const { keywordData, tags } = generateDummySEOData(input);
-            displayKeywords(keywordData);
-            displayTags(tags);
-            
-            // 3. Update Preview
-            updatePreview('Choose a title from the list above.');
-            
-            // Scroll to Research Section
+
+            // 1. UI को अपडेट करें: लोडिंग दिखाएँ
+            resultsContainer.innerHTML = `<div style="text-align: center; color: #66FCF1; padding: 20px;">
+                <i class="fas fa-spinner fa-spin"></i> Analyzing topic & generating AI titles...
+            </div>`;
             document.getElementById('research-section').scrollIntoView({ behavior: 'smooth' });
+
+            try {
+                // AI सर्वर को कॉल करें
+                const response = await fetch(BACKEND_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ topic: input }) // इनपुट टॉपिक भेजें
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server responded with status: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                // 2. Titles डिस्प्ले करें
+                displayAITitles(data.titles);
+                
+                // 3. Dummy SEO और Tags डिस्प्ले करें 
+                const { keywordData, tags } = generateDummySEOData(input);
+                displayKeywords(keywordData);
+                displayTags(tags);
+                
+                // 4. Preview अपडेट करें
+                updatePreview('Choose a generated AI title from the list above.');
+
+            } catch (error) {
+                console.error("AI Generation Error:", error);
+                resultsContainer.innerHTML = `<div style="text-align: center; color: orange; padding: 20px;">
+                    <i class="fas fa-exclamation-triangle"></i> Error generating titles. Server might be sleeping or unavailable. Please try again in 1 minute.
+                </div>`;
+            }
         }
         
         // --- 5. DISPLAY FUNCTIONS ---
         
-        function generateTitles(input) {
+        function displayAITitles(titles) {
             const resultsContainer = document.getElementById("titles-results");
-            resultsContainer.innerHTML = "";
+            resultsContainer.innerHTML = ""; // पुराने लोडिंग मैसेज को हटाएँ
             
-            const titles = new Set();
-            while (titles.size < 15) { // Generating 15 titles
-                titles.add(generateTitle(input));
-            }
-
             titles.forEach(title => {
                 const div = document.createElement("div");
                 div.className = "result-item";
@@ -790,6 +775,7 @@
         }
         
         function generateDummyDescription(title) {
+            // यह अभी भी डमी है, लेकिन इसमें AI टाइटल का पहला शब्द शामिल है।
             return `In this video, we reveal the ${title.toLowerCase().split(' ')[0]} way to ${document.getElementById("inputTitle").value.trim()}. This ultimate guide covers everything you need to know in 2025! Don't forget to like, subscribe, and hit the bell icon! #${getRandomItem(powerWords).toLowerCase()} #${document.getElementById("inputTitle").value.trim().replace(/\s/g, '')}`;
         }
 
@@ -811,4 +797,4 @@
 
     </script>
 </body>
-</html> 
+</html>
